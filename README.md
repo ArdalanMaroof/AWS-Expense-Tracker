@@ -67,20 +67,112 @@ The purpose of this module is to provide an intuitive and user-friendly interfac
 
 - Secure data encryption for all stored and transmitted data.
 
-2.3.3 Technical Requirements
 
-Backend hosted on AWS EC2
+#### 2.3.3 Technical Requirements
 
-Data stored in AWS DynamoDB
+- Backend hosted on AWS EC2
 
-UI developed with WPF using .NET Core
+- Data stored in AWS DynamoDB
 
-API security managed via AWS API Gateway
+- UI developed with WPF using .NET Core
 
-2.3.4 Security Requirements
+- API security managed via AWS API Gateway
 
-AWS Cognito for authentication
 
-AWS API Gateway for secure API access
+#### 2.3.4 Security Requirements
 
-IAM roles for minimal privilege access
+- AWS Cognito for authentication
+
+- AWS API Gateway for secure API access
+
+- IAM roles for minimal privilege access
+
+
+#### 2.3.5 Estimates
+
+![Table Screenshot](Estimate.png)
+
+#### 2.3.6 Traceability Matrix
+
+![Table Screenshot](TraceabilityMatrix.png)
+
+
+## Section 3: System Architecture
+
+### 3.1 Overview
+
+The Expense Tracker system is built using AWS cloud services to ensure scalability and security. The architecture consists of the following components:
+
+- Frontend: WPF application built with .NET Core.
+
+- Backend: REST API hosted on AWS EC2.
+
+- Database: AWS DynamoDB for storing user expenses and budgets.
+
+- Authentication: AWS Cognito for secure user management.
+
+- Monitoring: AWS CloudWatch for tracking system performance.
+
+
+### 3.2 Architectural Diagram
+
+(To be added as a visual representation of system components and interactions.)
+
+## Section 4: Data Dictionary
+
+![Table Screenshot](DataDictionary.png)
+
+
+## Section 5: Data Design
+
+### 5.1 Persistent/Static Data
+
+The Expense Tracker uses AWS DynamoDB to store expenses, user details, and budget information.
+
+
+### 5.1.1 Entity Relationship Diagram (ERD)
+
+(To be added: A diagram illustrating relationships between User, Expenses, and Budget.)
+
+
+## Section 6: User Interface Design
+
+### 6.1 UI Overview
+
+The UI is developed using WPF and provides the following functionalities:
+
+- Expense entry form
+
+- Budget setting panel
+
+- Expense list with editing options
+
+- Expense trend chart using LiveCharts
+
+
+### 6.2 UI Navigation Flow
+
+(To be added: Diagram showing navigation between different UI screens.)
+
+
+### 6.3 Use Cases
+
+- Adding an Expense: User enters details, selects category, and submits.
+
+- Setting a Budget: User inputs a monthly limit and saves it.
+
+- Viewing Trends: Expenses are displayed in a chart for analysis.
+
+
+## Next Steps
+
+- Implement detailed testing plan
+
+- Create deployment scripts for AWS
+
+- Integrate AWS CloudWatch monitoring
+
+
+
+
+
