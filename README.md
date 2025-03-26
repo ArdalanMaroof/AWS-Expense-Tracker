@@ -116,7 +116,7 @@ The Expense Tracker system is built using AWS cloud services to ensure scalabili
 
 ### 3.2 Architectural Diagram
 
-(To be added as a visual representation of system components and interactions.)
+![Table Screenshot](ArchitecturalDiagram.png)
 
 ## Section 4: Data Dictionary
 
