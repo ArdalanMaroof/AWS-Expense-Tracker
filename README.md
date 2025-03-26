@@ -153,7 +153,8 @@ The UI is developed using WPF and provides the following functionalities:
 
 ### 6.2 UI Navigation Flow
 
-(To be added: Diagram showing navigation between different UI screens.)
+![Table Screenshot](NavigationDiagram.png)
+
 
 
 ### 6.3 Use Cases
