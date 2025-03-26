@@ -132,7 +132,8 @@ The Expense Tracker uses AWS DynamoDB to store expenses, user details, and budge
 
 ### 5.1.1 Entity Relationship Diagram (ERD)
 
-(To be added: A diagram illustrating relationships between User, Expenses, and Budget.)
+![Table Screenshot](EntityDiagram.png)
+
 
 
 ## Section 6: User Interface Design
