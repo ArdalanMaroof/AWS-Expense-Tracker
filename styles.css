@@ -1,0 +1,43 @@
+body {
+    background-image: url('https://www.comptoir-irlandais.com/modules/advancedcms/uploads/AdvancedCmsBlockImageSlider/77/5d66a9575c9cd.jpg');
+    background-size: cover;
+    background-attachment: fixed;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container-fluid {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.budget-section, .add-expense-section, .expenses-list-section, .chart-section {
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+h1, h2, h3, h4 {
+    font-weight: bold;
+}
+
+#expenseTable {
+    background-color: white;
+}
+
+#expenseChart {
+    background-color: white;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+.form-control:focus {
+    box-shadow: none;
+    border-color: #495057;
+}
+
+.btn {
+    font-weight: bold;
+}
+
