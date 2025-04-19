@@ -1,43 +1,182 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
 body {
-    background-image: url('https://www.comptoir-irlandais.com/modules/advancedcms/uploads/AdvancedCmsBlockImageSlider/77/5d66a9575c9cd.jpg');
-    background-size: cover;
-    background-attachment: fixed;
+    background-color: #dddfd7;
     min-height: 100vh;
-    padding: 20px;
 }
 
-.container-fluid {
-    max-width: 1000px;
-    margin: 0 auto;
-}
-
-.budget-section, .add-expense-section, .expenses-list-section, .chart-section {
-    background-color: rgba(255, 255, 255, 0.8);
-    padding: 20px;
+.container {
+    max-width: 900px;
+    width: 100%;
+    margin: 80px auto 20px; /* Added top margin for navbar space */
+    background: rgb(235, 232, 232);
     border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 20px;
 }
 
-h1, h2, h3, h4 {
-    font-weight: bold;
+h1 {
+    color: #2c3e50;
 }
 
-#expenseTable {
-    background-color: white;
+h2 {
+    color: #2c3e50;
+    margin-bottom: 15px;
 }
 
-#expenseChart {
-    background-color: white;
-    border-radius: 5px;
+h3 {
+    color: #34495e;
+    margin: 10px 0;
+}
+
+.form-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+input, select, button {
     padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
 }
 
-.form-control:focus {
-    box-shadow: none;
-    border-color: #495057;
+input, select {
+    flex: 1;
+    min-width: 150px;
 }
 
-.btn {
-    font-weight: bold;
+button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover:not(:disabled) {
+    background-color: #2980b9;
+}
+
+button:disabled {
+    background-color: #bdc3c7;
+    cursor: not-allowed;
+}
+
+input:disabled, select:disabled {
+    background-color: #f0f0f0;
+    cursor: not-allowed;
+}
+
+.export-btn {
+    background-color: #27ae60;
+}
+
+.export-btn:hover:not(:disabled) {
+    background-color: #219653;
+}
+
+.budget-display {
+    text-align: center;
+    padding: 10px;
+    background: #ecf0f1;
+    border-radius: 5px;
+}
+
+#remainingAmount.negative {
+    color: #e74c3c;
+}
+
+.expense-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    transition: background-color 0.2s;
+}
+
+.expense-item:hover {
+    background-color: #f8f9fa;
+}
+
+.delete-btn {
+    background-color: #e74c3c;
+    padding: 5px 10px;
+    font-size: 14px;
+    margin-left: 5px;
+}
+
+.delete-btn:hover {
+    background-color: #c0392b;
+}
+
+.edit-btn {
+    background-color: #f1c40f;
+    padding: 5px 10px;
+    font-size: 14px;
+}
+
+.edit-btn:hover {
+    background-color: #e1b307;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+th, td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: #3498db;
+    color: white;
+}
+
+.filter-group {
+    margin-bottom: 20px;
+}
+
+.chart-section {
+    margin-top: 20px;
+}
+
+canvas {
+    max-width: 100%;
+}
+
+@media (max-width: 600px) {
+    .form-group {
+        flex-direction: column;
+    }
+    
+    input, select, button {
+        width: 100%;
+    }
+
+    .header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
 }
 
