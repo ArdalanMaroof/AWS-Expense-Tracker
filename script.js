@@ -1,325 +1,423 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize variables
-    let expenses = [];
-    let budget = {
-        monthlyLimit: 0,
-        totalExpenses: 0,
-        get remainingBudget() {
-            return this.monthlyLimit - this.totalExpenses;
+let expenses = [];
+let budget = null;
+let chart = null;
+let editingExpenseId = null;
+let userId = null;
+
+// Initialize DynamoDB and CloudWatch clients
+const dynamodb = new AWS.DynamoDB.DocumentClient();
+const cloudwatchlogs = new AWS.CloudWatchLogs();
+
+// Log to CloudWatch
+function logToCloudWatch(message, data = {}) {
+    const logGroupName = 'ExpenseTrackerLogs';
+    const logStreamName = `LogStream-${new Date().toISOString().split('T')[0]}`;
+    
+    const params = {
+        logGroupName,
+        logStreamName,
+        logEvents: [
+            {
+                message: JSON.stringify({ message, data, timestamp: new Date().toISOString() }),
+                timestamp: Date.now()
+            }
+        ]
+    };
+
+    cloudwatchlogs.putLogEvents(params, (err) => {
+        if (err) console.error('Error logging to CloudWatch:', err);
+    });
+}
+
+// Get current Cognito user
+async function initializeUser() {
+    try {
+        const user = await Amplify.Auth.currentAuthenticatedUser();
+        userId = user.attributes.sub;
+        await loadExpenses();
+        logToCloudWatch('User initialized', { userId });
+    } catch (err) {
+        console.error('Error initializing user:', err);
+        logToCloudWatch('Error initializing user', { error: err.message });
+    }
+}
+
+async function setBudget() {
+    const budgetInput = document.getElementById('budget').value;
+    if (budgetInput && budgetInput > 0) {
+        budget = parseFloat(budgetInput);
+        document.getElementById('budget').value = '';
+        enableExpenseForm();
+        await saveBudget();
+        updateBudgetDisplay();
+        updateCategorySummary();
+        updateChart();
+        logToCloudWatch('Budget set', { budget });
+    } else {
+        alert('Please enter a valid budget amount.');
+    }
+}
+
+async function saveBudget() {
+    const params = {
+        TableName: 'Expenses',
+        Item: {
+            userId: userId,
+            expenseId: 'BUDGET',
+            budget: budget,
+            type: 'BUDGET'
         }
     };
-    let selectedExpense = null;
-    let selectedIndex = -1;
-    
-    // DOM elements
-    const budgetInput = document.getElementById('budgetInput');
-    const setBudgetBtn = document.getElementById('setBudgetBtn');
-    const remainingBudgetDisplay = document.getElementById('remainingBudget');
-    const alertMessage = document.getElementById('alertMessage');
-    
-    const descriptionInput = document.getElementById('descriptionInput');
-    const amountInput = document.getElementById('amountInput');
-    const categoryInput = document.getElementById('categoryInput');
-    const isIncomeCheckBox = document.getElementById('isIncomeCheckBox');
-    const addExpenseBtn = document.getElementById('addExpenseBtn');
-    
-    const expenseTableBody = document.getElementById('expenseTableBody');
-    const saveExpenseBtn = document.getElementById('saveExpenseBtn');
-    
-    // Chart setup
+
+    try {
+        await dynamodb.put(params).promise();
+        logToCloudWatch('Budget saved to DynamoDB', { budget });
+    } catch (err) {
+        console.error('Error saving budget:', err);
+        logToCloudWatch('Error saving budget', { error: err.message });
+    }
+}
+
+async function loadBudget() {
+    const params = {
+        TableName: 'Expenses',
+        Key: {
+            userId: userId,
+            expenseId: 'BUDGET'
+        }
+    };
+
+    try {
+        const data = await dynamodb.get(params).promise();
+        if (data.Item) {
+            budget = data.Item.budget;
+            enableExpenseForm();
+        }
+        logToCloudWatch('Budget loaded', { budget });
+    } catch (err) {
+        console.error('Error loading budget:', err);
+        logToCloudWatch('Error loading budget', { error: err.message });
+    }
+}
+
+function enableExpenseForm() {
+    document.getElementById('description').disabled = false;
+    document.getElementById('amount').disabled = false;
+    document.getElementById('category').disabled = false;
+    document.getElementById('addExpenseBtn').disabled = false;
+}
+
+function updateBudgetDisplay() {
+    const totalSpent = expenses.reduce((sum, expense) => sum + Math.abs(expense.amount), 0);
+    const budgetElement = document.getElementById('budgetAmount');
+    const remainingElement = document.getElementById('remainingAmount');
+
+    budgetElement.textContent = budget !== null ? `$${budget.toFixed(2)}` : 'Not Set';
+    remainingElement.textContent = budget !== null ? `$${(budget - totalSpent).toFixed(2)}` : 'N/A';
+    remainingElement.className = budget !== null && (budget - totalSpent) < 0 ? 'negative' : '';
+}
+
+async function addExpense() {
+    if (budget === null) {
+        alert('Please set a budget before adding expenses.');
+        return;
+    }
+
+    const description = document.getElementById('description').value;
+    const amount = document.getElementById('amount').value;
+    const category = document.getElementById('category').value;
+
+    if (description && amount && amount > 0) {
+        const expense = {
+            id: editingExpenseId || Date.now().toString(),
+            description,
+            amount: -parseFloat(amount),
+            category,
+            date: new Date().toLocaleDateString()
+        };
+
+        if (editingExpenseId) {
+            await updateExpense(expense);
+            editingExpenseId = null;
+            document.getElementById('addExpenseBtn').textContent = 'Add Expense';
+        } else {
+            await saveExpense(expense);
+            expenses.push(expense);
+        }
+
+        document.getElementById('description').value = '';
+        document.getElementById('amount').value = '';
+        document.getElementById('category').value = 'Food';
+        displayExpenses();
+        updateBudgetDisplay();
+        updateCategorySummary();
+        updateChart();
+        logToCloudWatch('Expense added/updated', { expense });
+    } else {
+        alert('Please enter a valid description and amount.');
+    }
+}
+
+async function saveExpense(expense) {
+    const params = {
+        TableName: 'Expenses',
+        Item: {
+            userId: userId,
+            expenseId: expense.id,
+            description: expense.description,
+            amount: expense.amount,
+            category: expense.category,
+            date: expense.date,
+            type: 'EXPENSE'
+        }
+    };
+
+    try {
+        await dynamodb.put(params).promise();
+        logToCloudWatch('Expense saved to DynamoDB', { expenseId: expense.id });
+    } catch (err) {
+        console.error('Error saving expense:', err);
+        logToCloudWatch('Error saving expense', { error: err.message });
+    }
+}
+
+async function updateExpense(expense) {
+    const params = {
+        TableName: 'Expenses',
+        Key: {
+            userId: userId,
+            expenseId: expense.id
+        },
+        UpdateExpression: 'SET description = :desc, amount = :amt, category = :cat, #dt = :date',
+        ExpressionAttributeNames: {
+            '#dt': 'date'
+        },
+        ExpressionAttributeValues: {
+            ':desc': expense.description,
+            ':amt': expense.amount,
+            ':cat': expense.category,
+            ':date': expense.date
+        }
+    };
+
+    try {
+        await dynamodb.update(params).promise();
+        expenses = expenses.map(exp => exp.id === expense.id ? expense : exp);
+        logToCloudWatch('Expense updated in DynamoDB', { expenseId: expense.id });
+    } catch (err) {
+        console.error('Error updating expense:', err);
+        logToCloudWatch('Error updating expense', { error: err.message });
+    }
+}
+
+async function editExpense(id) {
+    const expense = expenses.find(expense => expense.id === id);
+    if (expense) {
+        document.getElementById('description').value = expense.description;
+        document.getElementById('amount').value = Math.abs(expense.amount).toFixed(2);
+        document.getElementById('category').value = expense.category;
+        document.getElementById('addExpenseBtn').textContent = 'Update Expense';
+        editingExpenseId = id;
+        logToCloudWatch('Expense edit initiated', { expenseId: id });
+    }
+}
+
+async function deleteExpense(id) {
+    const params = {
+        TableName: 'Expenses',
+        Key: {
+            userId: userId,
+            expenseId: id
+        }
+    };
+
+    try {
+        await dynamodb.delete(params).promise();
+        expenses = expenses.filter(expense => expense.id !== id);
+        displayExpenses();
+        updateBudgetDisplay();
+        updateCategorySummary();
+        updateChart();
+        logToCloudWatch('Expense deleted from DynamoDB', { expenseId: id });
+    } catch (err) {
+        console.error('Error deleting expense:', err);
+        logToCloudWatch('Error deleting expense', { error: err.message });
+    }
+}
+
+async function loadExpenses() {
+    const params = {
+        TableName: 'Expenses',
+        KeyConditionExpression: 'userId = :uid and begins_with(expenseId, :eid)',
+        ExpressionAttributeValues: {
+            ':uid': userId,
+            ':eid': ''
+        }
+    };
+
+    try {
+        const data = await dynamodb.query(params).promise();
+        expenses = data.Items.filter(item => item.type === 'EXPENSE').map(item => ({
+            id: item.expenseId,
+            description: item.description,
+            amount: item.amount,
+            category: item.category,
+            date: item.date
+        }));
+        await loadBudget();
+        displayExpenses();
+        updateBudgetDisplay();
+        updateCategorySummary();
+        updateChart();
+        logToCloudWatch('Expenses loaded', { count: expenses.length });
+    } catch (err) {
+        console.error('Error loading expenses:', err);
+        logToCloudWatch('Error loading expenses', { error: err.message });
+    }
+}
+
+function displayExpenses(filterCategory = 'all') {
+    const expenseList = document.getElementById('expenseList');
+    expenseList.innerHTML = '';
+
+    const filteredExpenses = filterCategory === 'all' 
+        ? expenses 
+        : expenses.filter(expense => expense.category === filterCategory);
+
+    filteredExpenses.forEach(expense => {
+        const expenseItem = document.createElement('div');
+        expenseItem.className = 'expense-item';
+        expenseItem.innerHTML = `
+            <div>
+                <strong>${expense.description}</strong>
+                <small>(${expense.category} - ${expense.date})</small>
+            </div>
+            <div>
+                <span>$${Math.abs(expense.amount).toFixed(2)}</span>
+                <button class="edit-btn" onclick="editExpense('${expense.id}')">Edit</button>
+                <button class="delete-btn" onclick="deleteExpense('${expense.id}')">Delete</button>
+            </div>
+        `;
+        expenseList.appendChild(expenseItem);
+    });
+}
+
+function updateCategorySummary() {
+    const categories = [...new Set(expenses.map(expense => expense.category))];
+    const tbody = document.querySelector('#categorySummary tbody');
+    tbody.innerHTML = '';
+
+    const totalSpent = expenses.reduce((sum, expense) => sum + Math.abs(expense.amount), 0);
+
+    categories.forEach(category => {
+        const categoryTotal = expenses
+            .filter(expense => expense.category === category)
+            .reduce((sum, expense) => sum + Math.abs(expense.amount), 0);
+        const percentage = totalSpent > 0 ? (categoryTotal / totalSpent * 100).toFixed(2) : 0;
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${category}</td>
+            <td>$${categoryTotal.toFixed(2)}</td>
+            <td>${percentage}%</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function updateChart() {
     const ctx = document.getElementById('expenseChart').getContext('2d');
-    let expenseChart = null;
-    
-    function initializeChart() {
-        expenseChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: [],
-                datasets: [
-                    {
-                        label: 'Expenses',
-                        data: [],
-                        borderColor: 'rgb(255, 99, 132)',
-                        backgroundColor: 'rgba(255, 99, 132, 0.5)',
-                        tension: 0.1
-                    },
-                    {
-                        label: 'Income',
-                        data: [],
-                        borderColor: 'rgb(54, 162, 235)',
-                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                        tension: 0.1
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                plugins: {
+    const categories = ['Food', 'Transport', 'Entertainment', 'Bills', 'Other'];
+    const categoryTotals = categories.map(category => 
+        expenses
+            .filter(expense => expense.category === category)
+            .reduce((sum, expense) => sum + Math.abs(expense.amount), 0)
+    );
+
+    if (chart) {
+        chart.destroy();
+    }
+
+    chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: categories,
+            datasets: [{
+                label: 'Expenses by Category ($)',
+                data: categoryTotals,
+                backgroundColor: [
+                    '#3498db',
+                    '#e74c3c',
+                    '#f1c40f',
+                    '#2ecc71',
+                    '#9b59b6'
+                ],
+                borderColor: [
+                    '#2980b9',
+                    '#c0392b',
+                    '#e1b307',
+                    '#27ae60',
+                    '#8e44ad'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: budget !== null ? budget : undefined,
                     title: {
                         display: true,
-                        text: 'Expense and Income Trends'
-                    },
-                },
-                scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Date'
-                        }
-                    },
-                    y: {
-                        title: {
-                            display: true,
-                            text: 'Amount'
-                        },
-                        beginAtZero: true
+                        text: 'Amount ($)'
                     }
                 }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
             }
-        });
-    }
-    
-    // Event listeners
-    setBudgetBtn.addEventListener('click', setBudget);
-    addExpenseBtn.addEventListener('click', addExpense); // Fixed typo here
-    saveExpenseBtn.addEventListener('click', saveExpense);
-    
-    // Initialize the app
-    initializeChart();
-    updateBudgetDisplay();
-    
-    // Functions
-    function setBudget() {
-        const newBudget = parseFloat(budgetInput.value);
-        if (!isNaN(newBudget)) {
-            budget.monthlyLimit = newBudget;
-            budget.totalExpenses = 0; // Fixed typo here
-            updateBudgetDisplay();
-            updateBudgetAlert();
-            budgetInput.value = '';
-        } else {
-            alert('Please enter a valid numeric value.');
         }
+    });
+}
+
+function exportToCSV() {
+    if (expenses.length === 0) {
+        alert('No expenses to export.');
+        return;
     }
-    
-    function addExpense() {
-        try {
-            const description = descriptionInput.value.trim();
-            const amount = parseFloat(amountInput.value);
-            const category = categoryInput.value;
-            const isIncome = isIncomeCheckBox.checked;
-            const date = new Date();
-            
-            if (!description || isNaN(amount) || !category) {
-                throw new Error('Please fill all fields with valid data');
-            }
-            
-            const expense = {
-                description,
-                amount,
-                category,
-                date,
-                isIncome
-            };
-            
-            expenses.push(expense);
-            
-            // Update budget totals
-            if (expense.isIncome) {
-                budget.totalExpenses += expense.amount;
-            } else {
-                budget.totalExpenses -= expense.amount;
-            }
-            
-            updateBudgetDisplay();
-            updateBudgetAlert();
-            refreshExpenseList();
-            updateChart();
-            
-            // Clear inputs
-            descriptionInput.value = '';
-            amountInput.value = '';
-            categoryInput.selectedIndex = 0;
-            isIncomeCheckBox.checked = false;
-        } catch (error) {
-            alert(`Error: ${error.message}`);
-        }
-    }
-    
-    function updateBudgetDisplay() {
-        remainingBudgetDisplay.textContent = formatCurrency(budget.remainingBudget);
-    }
-    
-    function updateBudgetAlert() {
-        if (budget.totalExpenses > budget.monthlyLimit) {
-            alertMessage.textContent = 'Warning: Budget limit exceeded!';
-            alertMessage.style.color = 'red';
-        } else if (budget.totalExpenses > budget.monthlyLimit * 0.8) {
-            alertMessage.textContent = 'Caution: Approaching budget limit.';
-            alertMessage.style.color = 'orange';
-        } else {
-            alertMessage.textContent = '';
-        }
-    }
-    
-    function refreshExpenseList() {
-        expenseTableBody.innerHTML = '';
-        
-        expenses.forEach((expense, index) => {
-            const row = document.createElement('tr');
-            row.dataset.index = index;
-            
-            row.innerHTML = `
-                <td>${expense.description}</td>
-                <td>${expense.category}</td>
-                <td class="${expense.isIncome ? 'text-success' : 'text-danger'}">
-                    ${expense.isIncome ? '+' : '-'}${formatCurrency(expense.amount)}
-                </td>
-                <td>${expense.date.toLocaleDateString()}</td>
-            `;
-            
-            row.addEventListener('click', function() {
-                selectExpenseForEdit(index);
-            });
-            
-            if (selectedIndex === index) {
-                row.classList.add('table-primary');
-            }
-            
-            expenseTableBody.appendChild(row);
-        });
-    }
-    
-    function selectExpenseForEdit(index) {
-        selectedIndex = index;
-        selectedExpense = expenses[index];
-        
-        // Highlight selected row
-        const rows = document.querySelectorAll('#expenseTableBody tr');
-        rows.forEach(row => row.classList.remove('table-primary'));
-        if (rows[index]) rows[index].classList.add('table-primary');
-        
-        // Populate form fields
-        descriptionInput.value = selectedExpense.description;
-        amountInput.value = selectedExpense.amount;
-        categoryInput.value = selectedExpense.category;
-        isIncomeCheckBox.checked = selectedExpense.isIncome;
-    }
-    
-    function saveExpense() {
-        if (selectedExpense === null || selectedIndex === -1) {
-            alert('No expense selected to edit and save changes.');
-            return;
-        }
-        
-        try {
-            const description = descriptionInput.value.trim();
-            const amount = parseFloat(amountInput.value);
-            const category = categoryInput.value;
-            const isIncome = isIncomeCheckBox.checked;
-            
-            if (!description || isNaN(amount) || !category) {
-                throw new Error('Please fill all fields with valid data');
-            }
-            
-            // First, reverse the old expense's impact on the budget
-            if (selectedExpense.isIncome) {
-                budget.totalExpenses -= selectedExpense.amount;
-            } else {
-                budget.totalExpenses += selectedExpense.amount;
-            }
-            
-            // Update the expense
-            selectedExpense.description = description;
-            selectedExpense.amount = amount;
-            selectedExpense.category = category;
-            selectedExpense.isIncome = isIncome;
-            selectedExpense.date = new Date();
-            
-            // Apply the new expense's impact on the budget
-            if (selectedExpense.isIncome) {
-                budget.totalExpenses += selectedExpense.amount;
-            } else {
-                budget.totalExpenses -= selectedExpense.amount;
-            }
-            
-            // Update the array
-            expenses[selectedIndex] = selectedExpense;
-            
-            updateBudgetDisplay();
-            updateBudgetAlert();
-            refreshExpenseList();
-            updateChart();
-            
-            // Clear form
-            descriptionInput.value = '';
-            amountInput.value = '';
-            categoryInput.selectedIndex = 0;
-            isIncomeCheckBox.checked = false;
-            
-            // Reset selection
-            selectedExpense = null;
-            selectedIndex = -1;
-            
-            alert('Expense updated successfully!');
-        } catch (error) {
-            alert(`Error while saving changes: ${error.message}`);
-        }
-    }
-    
-    function updateChart() {
-        if (expenses.length === 0) {
-            expenseChart.data.labels = [];
-            expenseChart.data.datasets[0].data = [];
-            expenseChart.data.datasets[1].data = [];
-            expenseChart.update();
-            return;
-        }
-        
-        // Group expenses by date
-        const groupedExpenses = {};
-        
-        expenses.forEach(expense => {
-            const dateStr = expense.date.toLocaleDateString();
-            if (!groupedExpenses[dateStr]) {
-                groupedExpenses[dateStr] = {
-                    expenses: 0,
-                    income: 0
-                };
-            }
-            
-            if (expense.isIncome) {
-                groupedExpenses[dateStr].income += expense.amount;
-            } else {
-                groupedExpenses[dateStr].expenses += expense.amount;
-            }
-        });
-        
-        // Sort dates chronologically
-        const sortedDates = Object.keys(groupedExpenses).sort((a, b) => {
-            return new Date(a) - new Date(b);
-        });
-        
-        // Prepare data for chart
-        const expenseData = [];
-        const incomeData = [];
-        
-        sortedDates.forEach(date => {
-            expenseData.push(groupedExpenses[date].expenses);
-            incomeData.push(groupedExpenses[date].income);
-        });
-        
-        // Update chart
-        expenseChart.data.labels = sortedDates;
-        expenseChart.data.datasets[0].data = expenseData;
-        expenseChart.data.datasets[1].data = incomeData;
-        expenseChart.update();
-    }
-    
-    function formatCurrency(amount) {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD'
-        }).format(amount);
-    }
+
+    const headers = ['ID', 'Description', 'Amount', 'Category', 'Date'];
+    const csvRows = [
+        headers.join(','),
+        ...expenses.map(expense => 
+            [
+                expense.id,
+                `"${expense.description.replace(/"/g, '""')}"`,
+                Math.abs(expense.amount).toFixed(2),
+                expense.category,
+                expense.date
+            ].join(',')
+        )
+    ];
+
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'expense_tracker.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    logToCloudWatch('Expenses exported to CSV', { count: expenses.length });
+}
+
+document.getElementById('categoryFilter').addEventListener('change', (e) => {
+    displayExpenses(e.target.value);
 });
+
+// Initialize user and load data
+initializeUser();
