@@ -3,83 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expense Tracker</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="styles.css">
+    <title>My Modern Website</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    
-    
+<body class="bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full text-center transform hover:scale-105 transition-transform duration-300">
+        <h3 class="text-3xl font-extrabold text-gray-800 mb-4">Welcome to My Website</h3>
+        <p class="text-gray-600 mb-6">Join us today to explore exclusive features and content.</p>
+        <p>
+            
+            <a href="https://us-east-1owldogoqx.auth.us-east-1.amazoncognito.com/login?client_id=3jeki3usio1pvhs4mu844v7tp&response_type=code&scope=email+openid+phone&redirect_uri=https%3A%2F%2Fstaging.d32hc0a5h1zbmz.amplifyapp.com%2Flogged_in.html"
 
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-12">
-                <h1 class="text-center text-white my-4">Expense Tracker with Budget Analysis</h1>
-                
-                <div class="budget-section mb-4">
-                    <div class="input-group mb-3">
-                        <input type="text" id="budgetInput" class="form-control" placeholder="Enter Monthly Budget">
-                        <button class="btn btn-primary" id="setBudgetBtn">Set Budget</button>
-                    </div>
-                    <h4>Remaining Budget:</h4>
-                    <h3 id="remainingBudget">$0.00</h3>
-                    <div id="alertMessage" class="text-danger fw-bold"></div>
-                </div>
-                
-                <div class="add-expense-section mb-4">
-                    <h3 class="text-black">Add Expense/Income</h3>
-                    <div class="form-group mb-2">
-                        <input type="text" id="descriptionInput" class="form-control" placeholder="Description">
-                    </div>
-                    <div class="form-group mb-2">
-                        <input type="number" id="amountInput" class="form-control" placeholder="Amount">
-                    </div>
-                    <div class="form-group mb-2">
-                        <select id="categoryInput" class="form-control">
-                            <option value="" disabled selected>Select Category</option>
-                            <option value="Food">Food</option>
-                            <option value="Transport">Transport</option>
-                            <option value="Entertainment">Entertainment</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" id="isIncomeCheckBox">
-                        <label class="form-check-label text-black" for="isIncomeCheckBox">Is Income?</label>
-                    </div>
-                    <button class="btn btn-success" id="addExpenseBtn">Add</button>
-                </div>
-                
-                <div class="expenses-list-section mb-4">
-                    <h3 class="text-black">Expenses List</h3>
-                    <p class="text-black">To edit, click on a row below and then edit it in the form above</p>
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover" id="expenseTable">
-                            <thead>
-                                <tr>
-                                    <th>Description</th>
-                                    <th>Category</th>
-                                    <th>Amount</th>
-                                    <th>Date</th>
-                                </tr>
-                            </thead>
-                            <tbody id="expenseTableBody">
-                                <!-- Expenses will be added here dynamically -->
-                            </tbody>
-                        </table>
-                    </div>
-                    <button class="btn btn-warning" id="saveExpenseBtn">Save Edit/Changes</button>
-                </div>
-                
-                <div class="chart-section mb-4">
-                    <h3 class="text-black">Expense Trends</h3>
-                    <canvas id="expenseChart"></canvas>
-                </div>
-            </div>
-        </div>
+
+               class="inline-block bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold py-3 px-8 rounded-full hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-md hover:shadow-lg">
+               Register or Login
+            </a>
+        </p>
     </div>
-
-    <script src="script.js"></script>
 </body>
 </html>
