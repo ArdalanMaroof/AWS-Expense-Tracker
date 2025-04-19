@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logged Out</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for glassmorphism and animations */
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .animate-slide-up {
+            animation: slideUp 0.5s ease-out forwards;
+        }
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .hover-scale {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .hover-scale:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-100 min-h-screen flex flex-col font-sans">
+    <!-- Navbar -->
+    <nav class="glass-nav px-6 py-4 flex justify-between items-center shadow-sm">
+        <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Expense Tracker</h1>
+        <form action="https://us-east-1owldogoqx.auth.us-east-1.amazoncognito.com/login" method="get">
+            <input type="hidden" name="client_id" value="3jeki3usio1pvhs4mu844v7tp">
+            <input type="hidden" name="redirect_uri" value="https://staging.d32hc0a5h1zbmz.amplifyapp.com/logged_in.html">
+            <input type="hidden" name="response_type" value="code">
+            <input type="hidden" name="scope" value="email openid phone">
+            <button type="submit" class="bg-gradient-to-r from-teal-400 to-cyan-500 text-white font-semibold py-2 px-6 rounded-full hover:from-teal-500 hover:to-cyan-600 transition duration-300 hover-scale">
+                Log back in
+            </button>
+        </form>
+    </nav> 
+
+    <!-- Main Content -->
+    <div class="flex-grow flex items-center justify-center">
+        <div class="glass-card p-10 rounded-2xl shadow-2xl max-w-md w-full text-center animate-slide-up">
+            <h2 class="text-3xl font-extrabold text-gray-900 mb-4 tracking-tight">You are logged out</h2>
+            <p class="text-gray-600 text-lg leading-relaxed">Come back soon to explore more features!</p>
+        </div>
+    </div>
+</body>
+</html>

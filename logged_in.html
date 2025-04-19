@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logged In</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for glassmorphism and animations */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .animate-slide-up {
+            animation: slideUp 0.5s ease-out forwards;
+        }
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .hover-scale {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .hover-scale:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+        .logout-btn {
+            display: inline-block;
+            background: linear-gradient(90deg, #e2e8f0, #edf2f7);
+            padding: 0.5rem 1.25rem;
+            border-radius: 9999px;
+            color: #4a5568;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .logout-btn:hover {
+            background: linear-gradient(90deg, #cbd5e0, #e2e8f0);
+            color: #2d3748;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-100 flex flex-col min-h-screen font-sans">
+    <!-- Navbar -->
+    <nav class="glass-nav px-6 py-4 shadow-sm">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <h2 class="text-xl font-bold text-gray-900 tracking-tight">Expense Tracker</h2>
+
+            
+
+            <a href="https://us-east-1owldogoqx.auth.us-east-1.amazoncognito.com/logout?client_id=3jeki3usio1pvhs4mu844v7tp&logout_uri=https%3A%2F%2Fstaging.d32hc0a5h1zbmz.amplifyapp.com%2Flogged_out.html"
+            
+               class="logout-btn">
+                Log out
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="flex-grow flex items-center justify-center">
+        <div class="glass-card p-12 rounded-2xl shadow-2xl max-w-md w-full text-center animate-slide-up">
+            <h1 class="text-4xl font-extrabold text-gray-900 mb-4 tracking-tight">Welcome Back!</h1>
+            <p class="text-gray-600 text-lg mb-8 leading-relaxed">You're logged in! Dive into exclusive content and personalized features.</p>
+            
+            <a href="expenseTracker.html">
+                <button class="bg-gradient-to-r from-teal-400 to-cyan-500 text-white font-semibold py-3 px-10 rounded-full hover:from-teal-500 hover:to-cyan-600 transition duration-300 mb-6 hover-scale">
+                    Explore Expense Tracker
+                </button>
+            </a>
+        </div>
+    </div>
+</body>
+</html>

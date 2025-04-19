@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- AWS SDK for JavaScript v2 -->
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1448.0.min.js"></script>
+    <!-- Amplify Library -->
+   
+<script src="https://cdn.jsdelivr.net/npm/aws-amplify@5.3.19/dist/aws-amplify.min.js"></script>
+
+    <style>
+        /* Navbar styling */
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #1a2634;
+            padding: 15px 30px;
+            color: #ffffff;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar h1 {
+            margin: 0;
+            font-size: 26px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .navbar form {
+            margin: 0;
+        }
+
+        .navbar button {
+            background-color: #ff4d4d;
+            border: none;
+            color: #ffffff;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .navbar button:hover {
+            background-color: #e63939;
+            transform: translateY(-2px);
+        }
+
+        .navbar button:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <script>
+        // Configure AWS SDK with Cognito credentials
+        AWS.config.update({
+            region: 'us-east-1',
+            credentials: new AWS.CognitoIdentityCredentials({
+                IdentityPoolId: 'us-east-1:9e35f471-ca54-4a1b-bdc2-6493d15a0cf0' // Replace with your Identity Pool ID
+            })
+        });
+
+        // Initialize Amplify for Auth
+        Amplify.configure({
+            Auth: {
+                region: 'us-east-1',
+                userPoolId: 'us-east-1_OwldOGoqX',
+                userPoolWebClientId: '3jeki3usio1pvhs4mu844v7tp',
+                mandatorySignIn: true,
+                oauth: {
+                    domain: 'us-east-1owldogoqx.auth.us-east-1.amazoncognito.com',
+                    scope: ['email', 'openid', 'phone'],
+                    redirectSignIn: 'https://staging.d32hc0a5h1zbmz.amplifyapp.com/logged_in.html',
+                    redirectSignOut: 'https://staging.d32hc0a5h1zbmz.amplifyapp.com/logged_out.html',
+                    responseType: 'code'
+                }
+            }
+        });
+    </script>
+
+    <div class="navbar">
+        <h1>My App</h1>
+        <form action="https://us-east-1owldogoqx.auth.us-east-1.amazoncognito.com/logout" method="get">
+            <input type="hidden" name="client_id" value="3jeki3usio1pvhs4mu844v7tp">
+            <input type="hidden" name="logout_uri" value="https://staging.d32hc0a5h1zbmz.amplifyapp.com/logged_out.html">
+            <button type="submit">Log out</button>
+        </form>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>Expense Tracker</h1>
+            <button class="export-btn" onclick="exportToCSV()">Export to CSV</button>
+        </div>
+
+        <!-- Budget Section -->
+        <div class="budget-section">
+            <h2>Set Budget</h2>
+            <div class="form-group">
+                <input type="number" id="budget" placeholder="Enter your budget" step="0.01" min="0">
+                <button onclick="setBudget()">Set Budget</button>
+            </div>
+            <div class="budget-display">
+                <h3>Current Budget: <span id="budgetAmount"></span></h3>
+                <h3>Remaining: <span id="remainingAmount"></span></h3>
+            </div>
+        </div>
+
+        <!-- Add Expense Section -->
+        <div class="expense-section">
+            <h2>Add Expense</h2>
+            <div class="form-group">
+                <input type="text" id="description" placeholder="Description" required disabled>
+                <input type="number" id="amount" placeholder="Amount" step="0.01" min="0" required disabled>
+                <select id="category" disabled>
+                    <option value="Food">Food</option>
+                    <option value="Transport">Transport</option>
+                    <option value="Entertainment">Entertainment</option>
+                    <option value="Bills">Bills</option>
+                    <option value="Other">Other</option>
+                </select>
+                <button id="addExpenseBtn" onclick="addExpense()" disabled>Add Expense</button>
+            </div>
+        </div>
+
+        <!-- Category Summary Section -->
+        <div class="summary-section">
+            <h2>Category Summary</h2>
+            <table id="categorySummary">
+                <thead>
+                    <tr>
+                        <th>Category</th>
+                        <th>Total Spent</th>
+                        <th>Percentage</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- Expense History Section -->
+        <div class="history-section">
+            <h2>Expense History</h2>
+            <div class="filter-group">
+                <select id="categoryFilter">
+                    <option value="all">All Categories</option>
+                    <option value="Food">Food</option>
+                    <option value="Transport">Transport</option>
+                    <option value="Entertainment">Entertainment</option>
+                    <option value="Bills">Bills</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div id="expenseList"></div>
+        </div>
+
+        <!-- Bar Chart Section -->
+        <div class="chart-section">
+            <h2>Expense Distribution by Category</h2>
+            <canvas id="expenseChart"></canvas>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
